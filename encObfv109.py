@@ -23,7 +23,7 @@ LUA_KEYWORDS = {
     'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then',
     'true', 'until', 'while', 'x', 'y', 'px', 'py', 'name', 'GetWorld', 'GetTile', 'GetLocal',
     'userid', 'LogToConsole', 'SendVariantList', 'SendPacketRaw', 'SendPacket', 'item', '_',
-    'id', 'amount', 'find', 'self'
+    'id', 'amount', 'find', 'self', 'byte'
 }
 LUA_BUILTINS = {
     'assert', 'collectgarbage', 'dofile', 'error', 'getmetatable', 'ipairs', 
