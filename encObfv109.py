@@ -173,7 +173,7 @@ def obfuscate_lua_code(code, single_line=False):
                 non_empty_lines.append(stripped)
         # Gabungkan dengan ';'
         code = ';'.join(non_empty_lines)
-    ############################################################
+
 
     # Kembalikan string literal
     for i, string_val in enumerate(strings):
@@ -187,20 +187,16 @@ def obfuscate_lua_code(code, single_line=False):
         code = re.sub(r'([^<>])\s*([<>])\s*([^=])', r'\1\2\3', code)  # Operator khusus
         code = re.sub(r'([^<>])\s*([<>])\s*$', r'\1\2', code)  # Operator di akhir baris
 
-        ############################################################
-        # [BARU] Bersihkan titik koma berturut-turut
+
+
         code = re.sub(r';+', '; ', code)  # Gabungkan titik koma berturut-turut jadi satu
         code = code.strip(';')            # Hapus titik koma di awal/akhir
-        ############################################################
 
-        ############################################################
-        # [DIUBAH] Hapus titik koma yang terjadi tepat setelah '{' atau tepat sebelum '}'
-        # Ini mencegah kesalahan di dalam table constructors seperti {; ... ;}
         code = re.sub(r'\{\s*;\s*', '{', code)
         code = re.sub(r';\s*\}', '}', code)
 
         code = re.sub(r',\s*;\s*', ', ', code)
-        ############################################################
+
 
     else:
         # Pertahankan struktur baris
