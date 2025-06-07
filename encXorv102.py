@@ -5,11 +5,11 @@ import argparse
 
 
 ### Mode multi-line (default)
-# $python obfuscator.py -o output.lua -k SecretKey input.lua 
+# $python encXorv102.py -o output.lua -k SecretKey input.lua 
 
 ### Mode single-line
-# $python obfuscator.py -o output.lua -k SecretKey input.lua --single-line
-# $python obfuscator.py -o output.lua -k SecretKey input.lua -s
+# $python encXorv102.py -o output.lua -k SecretKey input.lua --single-line
+# $python encXorv102.py -o output.lua -k SecretKey input.lua -s
 
 
 def encrypt_lua_code(lua_code: str, key: str, single_line: bool = False) -> str:
