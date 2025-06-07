@@ -10,11 +10,11 @@ obflength = 4
 
 
 ### Mode multi-line (default)
-# $python obfuscator.py input.lua -o output.lua
+# $python encObfv109.py input.lua -o output.lua
 
 ### Mode single-line
-# $python obfuscator.py input.lua -o output.lua --single-line
-# $python obfuscator.py input.lua -o output.lua --s
+# $python encObfv109.py input.lua -o output.lua --single-line
+# $python encObfv109.py input.lua -o output.lua --s
 
 
 # Keyword dan fungsi bawaan Lua
