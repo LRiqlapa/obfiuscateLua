@@ -6,15 +6,15 @@ import os
 import argparse
 
 # panjang huruf obfiuscate
-obflength = 4
+obflength = 20
 
 
 ### Mode multi-line (default)
-# $python encObfv109.py input.lua -o output.lua
+# $python obfv109.py input.lua -o output.lua
 
 ### Mode single-line
-# $python encObfv109.py input.lua -o output.lua --single-line
-# $python encObfv109.py input.lua -o output.lua --s
+# $python obfv109.py input.lua -o output.lua --single-line
+# $python obfv109.py input.lua -o output.lua --s
 
 
 # Keyword dan fungsi bawaan Lua
@@ -29,7 +29,7 @@ LUA_BUILTINS = {
     'assert', 'collectgarbage', 'dofile', 'error', 'getmetatable', 'ipairs', 
     'load', 'loadfile', 'next', 'pairs', 'pcall', 'print', 'rawequal', 
     'rawget', 'rawlen', 'rawset', 'require', 'select', 'setmetatable', 
-    'tonumber', 'tostring', 'type', 'xpcall', '_G', '_VERSION'
+    'tonumber', 'tostring', 'type', 'xpcall', '_G', '_VERSION', 'lines'
 }
 
 def generate_random_identifier(existing_ids, length=obflength):
@@ -137,7 +137,7 @@ def obfuscate_lua_code(code, single_line=False):
     declarations = find_declarations(code)
     
     # Buat pemetaan untuk deklarasi
-    random.seed(0)
+    random.seed(321)
     mapping = {}
     existing_ids = set()
     protected_identifiers = set()
@@ -162,8 +162,8 @@ def obfuscate_lua_code(code, single_line=False):
     for old_name in sorted_decls:
         code = re.sub(r'\b' + re.escape(old_name) + r'\b', mapping[old_name], code)
     
-    ############################################################
-    # [BARU] Gabungkan baris dengan titik koma (mode single-line)
+    
+    
     if single_line:
         lines = code.split('\n')
         non_empty_lines = []
@@ -173,7 +173,7 @@ def obfuscate_lua_code(code, single_line=False):
                 non_empty_lines.append(stripped)
         # Gabungkan dengan ';'
         code = ';'.join(non_empty_lines)
-
+    
 
     # Kembalikan string literal
     for i, string_val in enumerate(strings):
@@ -183,20 +183,25 @@ def obfuscate_lua_code(code, single_line=False):
     if single_line:
         # Kompres seluruh kode menjadi satu baris
         code = re.sub(r'\s+', ' ', code)           # Ganti semua whitespace dengan spasi
-        code = re.sub(r'\s*([=,{}()[\];])\s*', r'\1', code)  # Hapus spasi di sekitar simbol
+        # Jangan hapus spasi sebelum '(' jika setelah kata
+        code = re.sub(r'(?<!\w)\s*([=,{}()[\];])\s*', r'\1', code)
+        code = re.sub(r'\s*([=,{}[\];])\s*', r'\1', code)
+        # Hapus spasi di sekitar simbol
         code = re.sub(r'([^<>])\s*([<>])\s*([^=])', r'\1\2\3', code)  # Operator khusus
         code = re.sub(r'([^<>])\s*([<>])\s*$', r'\1\2', code)  # Operator di akhir baris
 
-
-
+        
+        
         code = re.sub(r';+', '; ', code)  # Gabungkan titik koma berturut-turut jadi satu
         code = code.strip(';')            # Hapus titik koma di awal/akhir
+        
+
 
         code = re.sub(r'\{\s*;\s*', '{', code)
         code = re.sub(r';\s*\}', '}', code)
 
         code = re.sub(r',\s*;\s*', ', ', code)
-
+        
 
     else:
         # Pertahankan struktur baris
@@ -211,7 +216,11 @@ def obfuscate_lua_code(code, single_line=False):
             
             # Hapus spasi berlebihan
             line = re.sub(r'\s+', ' ', line)           # Ganti spasi ganda
-            line = re.sub(r'\s*([=,{}()[\];])\s*', r'\1', line)  # Hapus spasi di sekitar simbol
+            # Jangan hapus spasi sebelum '(' jika setelah kata
+            line = re.sub(r'(?<!\w)\s*([=,{}()[\];])\s*', r'\1', line)
+            line = re.sub(r'\s*([=,{}[\];])\s*', r'\1', line)
+
+              # Hapus spasi di sekitar simbol
             line = re.sub(r'([^<>])\s*([<>])\s*([^=])', r'\1\2\3', line)  # Operator khusus
             line = re.sub(r'([^<>])\s*([<>])\s*$', r'\1\2', line)  # Operator di akhir baris
             minified_lines.append(line.strip())
