@@ -23,7 +23,7 @@ LUA_KEYWORDS = {
     'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then',
     'true', 'until', 'while', 'x', 'y', 'px', 'py', 'name', 'GetWorld', 'GetTile', 'GetLocal',
     'userid', 'LogToConsole', 'SendVariantList', 'SendPacketRaw', 'SendPacket', 'item', '_',
-    'id', 'amount', 'find', 'self', 'byte', 'asdPNB', 'asdPTHT', 'asdCredit'
+    'id', 'amount', 'find', 'self', 'byte'
 }
 LUA_BUILTINS = {
     'assert', 'collectgarbage', 'dofile', 'error', 'getmetatable', 'ipairs', 
@@ -262,3 +262,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error: {str(e)}")
         sys.exit(1)
+
