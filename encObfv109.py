@@ -6,7 +6,7 @@ import os
 import argparse
 
 # panjang huruf obfiuscate
-obflength = 20
+obflength = 10
 
 
 ### Mode multi-line (default)
@@ -23,7 +23,7 @@ LUA_KEYWORDS = {
     'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then',
     'true', 'until', 'while', 'x', 'y', 'px', 'py', 'name', 'GetWorld', 'GetTile', 'GetLocal',
     'userid', 'LogToConsole', 'SendVariantList', 'SendPacketRaw', 'SendPacket', 'item', '_',
-    'id', 'amount', 'find', 'self', 'byte'
+    'id', 'amount', 'find', 'self', 'byte', 'asdPNB', 'asdPTHT', 'asdCredit'
 }
 LUA_BUILTINS = {
     'assert', 'collectgarbage', 'dofile', 'error', 'getmetatable', 'ipairs', 
@@ -116,23 +116,25 @@ def is_protected_access(identifier, code):
 
 def obfuscate_lua_code(code, single_line=False):
     """Obfuscate Lua code: rename functions dan local variables, keep non-function globals"""
-    # Hapus komentar
-    code = re.sub(r'--\[\[.*?\]\]', '', code, flags=re.DOTALL)
-    code = re.sub(r'--[^\n]*', '', code)
-    
-    # Ekstrak semua string literal
+    # 1. Ekstrak semua string literal termasuk long bracket
     strings = []
     def string_replacer(match):
         strings.append(match.group(0))
         return f"__STRING_{len(strings)-1}__"
     
+    # Tangkap semua string: '', "", dan long bracket [[ ]], [=[ ]=], dll.
     code = re.sub(
-        r'(\'[^\']*\'|\"[^\"]*\"|\[\[.*?\]\])', 
+        r'(\'[^\']*\'|\"[^\"]*\"|\[(=*)\[.*?\]\2\])', 
         string_replacer, 
         code, 
         flags=re.DOTALL
     )
     
+    # 2. Hapus komentar setelah string diekstrak
+    code = re.sub(r'--\[(=*)\[.*?\]\1\]', '', code, flags=re.DOTALL)
+    code = re.sub(r'--[^\n]*', '', code)
+    
+    # PERBAIKAN: Tambahkan deklarasi yang hilang
     # Temukan deklarasi yang perlu diobfuscate
     declarations = find_declarations(code)
     
@@ -162,72 +164,69 @@ def obfuscate_lua_code(code, single_line=False):
     for old_name in sorted_decls:
         code = re.sub(r'\b' + re.escape(old_name) + r'\b', mapping[old_name], code)
     
-    
-    
     if single_line:
+        # Proteksi tambahan untuk string long bracket sebelum kompresi
+        protected_long_brackets = []
+        long_bracket_pattern = re.compile(r'\[(=*)\[.*?\]\1\]', re.DOTALL)
+        
+        def long_bracket_protector(match):
+            protected_long_brackets.append(match.group(0))
+            return f"__LONG_BRACKET_{len(protected_long_brackets)-1}__"
+        
+        # Proteksi long bracket yang sudah di-obfuscate
+        code = long_bracket_pattern.sub(long_bracket_protector, code)
+        
+        # Kompres kode menjadi satu baris
         lines = code.split('\n')
         non_empty_lines = []
         for line in lines:
             stripped = line.strip()
             if stripped:
                 non_empty_lines.append(stripped)
-        # Gabungkan dengan ';'
         code = ';'.join(non_empty_lines)
-    
-
-    # Kembalikan string literal
-    for i, string_val in enumerate(strings):
-        code = code.replace(f"__STRING_{i}__", string_val)
-    
-    # Minify: Hapus spasi berlebihan
-    if single_line:
-        # Kompres seluruh kode menjadi satu baris
-        code = re.sub(r'\s+', ' ', code)           # Ganti semua whitespace dengan spasi
-        # Jangan hapus spasi sebelum '(' jika setelah kata
-        code = re.sub(r'(?<!\w)\s*([=,{}()[\];])\s*', r'\1', code)
+        
+        # Kompres whitespace dan simbol
+        code = re.sub(r'\s+', ' ', code)
+        code = re.sub(r'(?<!\w)\s*([=,{}()[\];])\s*(?!\w)', r'\1', code)
         code = re.sub(r'\s*([=,{}[\];])\s*', r'\1', code)
-        # Hapus spasi di sekitar simbol
-        code = re.sub(r'([^<>])\s*([<>])\s*([^=])', r'\1\2\3', code)  # Operator khusus
-        code = re.sub(r'([^<>])\s*([<>])\s*$', r'\1\2', code)  # Operator di akhir baris
-
-        
-        
-        code = re.sub(r';+', '; ', code)  # Gabungkan titik koma berturut-turut jadi satu
-        code = code.strip(';')            # Hapus titik koma di awal/akhir
-        
-
-
+        code = re.sub(r'([^<>])\s*([<>])\s*([^=])', r'\1\2\3', code)
+        code = re.sub(r'([^<>])\s*([<>])\s*$', r'\1\2', code)
+        code = re.sub(r';+', '; ', code)
+        code = code.strip(';')
         code = re.sub(r'\{\s*;\s*', '{', code)
         code = re.sub(r';\s*\}', '}', code)
-
         code = re.sub(r',\s*;\s*', ', ', code)
         
-
+        # Kembalikan long bracket yang diproteksi
+        for i, lb_val in enumerate(protected_long_brackets):
+            code = code.replace(f"__LONG_BRACKET_{i}__", lb_val)
+    
     else:
         # Pertahankan struktur baris
         lines = code.split('\n')
         minified_lines = []
         
         for line in lines:
-            # Lewati baris kosong
             if not line.strip():
                 minified_lines.append('')
                 continue
             
-            # Hapus spasi berlebihan
-            line = re.sub(r'\s+', ' ', line)           # Ganti spasi ganda
-            # Jangan hapus spasi sebelum '(' jika setelah kata
+            line = re.sub(r'\s+', ' ', line)
             line = re.sub(r'(?<!\w)\s*([=,{}()[\];])\s*', r'\1', line)
             line = re.sub(r'\s*([=,{}[\];])\s*', r'\1', line)
-
-              # Hapus spasi di sekitar simbol
-            line = re.sub(r'([^<>])\s*([<>])\s*([^=])', r'\1\2\3', line)  # Operator khusus
-            line = re.sub(r'([^<>])\s*([<>])\s*$', r'\1\2', line)  # Operator di akhir baris
+            line = re.sub(r'([^<>])\s*([<>])\s*([^=])', r'\1\2\3', line)
+            line = re.sub(r'([^<>])\s*([<>])\s*$', r'\1\2', line)
             minified_lines.append(line.strip())
         
         code = '\n'.join(minified_lines)
     
+    # Kembalikan semua string literal
+    for i, string_val in enumerate(strings):
+        code = code.replace(f"__STRING_{i}__", string_val)
+    
     return code
+
+# ... (bagian main tetap sama) ...
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Lua Code Obfuscator')
